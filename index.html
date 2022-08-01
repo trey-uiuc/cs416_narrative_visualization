@@ -8,6 +8,7 @@
 
       svg {
         border: 2px solid black;
+        background: lightblue;
       }
 
       path {
@@ -15,8 +16,8 @@
         stroke-width: 0.25px;
       }
 
-      .countries {
-        fill: none;
+      .country {
+        fill: black;
       }
 
     </style>
@@ -48,6 +49,10 @@
         return result;
       }
 
+      <!-- var color = d3.scaleThreshold() -->
+            <!-- .domain([1,10]) -->
+            <!-- .rangeRound([600, 860]) -->
+
       var width = 960,
          height = 500;
 
@@ -62,17 +67,18 @@
           .projection(projection);
 
       var g = svg.append("g")
-            .attr("class", "country");
 
       // load and display the World
       d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
               .then(function(topology) {
                   let data = get_data()
-                        .then(function(d) {
-                          console.log(d);
+                        .then(function(wine_data) {
+                          console.log(wine_data);
                           g.selectAll("path")
                              .data(topojson.feature(topology, topology.objects.countries).features)
                              .enter().append("path")
+                             .attr("class", "country")
+                             .attr("text", d => d.properties.name)
                              .attr("d", path);
                         });
                   });
