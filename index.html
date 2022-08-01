@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Page Title</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+
+      svg {
+        border: 2px solid black;
+      }
+
+      path {
+        stroke: red;
+        stroke-width: 0.25px;
+      }
+
+      .countries {
+        fill: none;
+      }
+
+    </style>
+
+  </head>
+  <body>
+    <h1>This is a Heading</h1>
+    <p>This is a paragraph.</p>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/topojson-client@3"></script>
+    <script>
+
+      <!-- const color = d3.scaleSequential() -->
+            <!-- .domain([d3.min()]) -->
+
+      function get_data() {
+        let result = d3.csv("./data/wine.csv")
+          .then(function(data){
+              let grouped_arr = Array.from(d3.rollup(data, v => v.length, d => d.country), ([key, value]) => ({key, value}));
+              let grouped_map = d3.rollup(data, v => v.length, d => d.country);
+              let filtered_data = grouped_arr.filter((d) => d.value > 10);
+              let filtered_map = new Map(
+                      filtered_data.map(object => {
+                              return [object.key, object.value];
+                            }),
+                    );
+              return filtered_map;
+          })
+          .catch(function(error){
+                  throw error;
+          });
+        return result;
+      }
+
+      <!-- console.log(get_data()); -->
+
+      var width = 960,
+         height = 500;
+
+      var projection = d3.geoMercator()
+          <!-- .center([0, 100 ]) -->
+          .scale(150)
+          <!-- .rotate([-180,0]); -->
+
+      var svg = d3.select("body").append("svg")
+          .attr("width", width)
+          .attr("height", height);
+
+      var path = d3.geoPath()
+          .projection(projection);
+
+      var g = svg.append("g")
+            .attr("class", "country");
+
+      // load and display the World
+      d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
+              .then(function(topology) {
+                  let data = get_data()
+                        .then(function(d) {
+                          console.log(d);
+                          g.selectAll("path")
+                             .data(topojson.feature(topology, topology.objects.countries).features)
+                             .enter().append("path")
+                             .attr("d", path);
+                        });
+                  });
+
+
+            <!-- global_colorScale = d3 -->
+              <!-- .scale.ordinal() -->
+              <!-- .domain(data.map(function(d) { return d.id; })) -->
+              <!-- .range(data.map(function(d) { return d.color; })); -->
+              <!-- .style("fill", function(d) { return global_colorScale(d.id);  }) -->
+
+
+    </script>
+
+  </body>
+</html>
