@@ -82,6 +82,10 @@
         return result;
       }
 
+      function capitalize(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+      }
+
       let groupby = function(dataset, col) {
               let grouped = d3.rollup(dataset, v => v.length, d => d[col]);
               return Array.from(grouped, ([key, value]) => ({key, value}));
@@ -198,121 +202,149 @@
                                             .style("visibility", "hidden");
                                         }
 
-                                  let last_chart = function(x) {
-                                          d3.select("#scene3").remove();
-                                          d3.select("#scene3_title").remove();
-                                          mouseleave();
-                                          mouseleave2();
+                                  let possible_vars = ["price", "points"];
+                                  let possible_vars_copy = possible_vars.slice();
+
+                                  function get_other_var(selection) {
+                                              let possible_vars_copy = possible_vars.slice();
+                                              possible_vars_copy.splice(possible_vars.indexOf(selection), 1);
+                                              return possible_vars_copy[0];
+                                  }
+
+                                  let chosen_var = possible_vars[0];
+                                  let not_chosen_var = get_other_var(chosen_var);
+
+                                  function last_chart(x, v) {
+                                            d3.select("#scene3").remove();
+                                            d3.select("#scene3_title").remove();
+                                            mouseleave();
+                                            mouseleave2();
 
                                           let variety = x.target.__data__.key;
-                                          let chosen_var = "price";
 
-                                          var header3 = d3.select("body").append("h2")
-                                            .attr("class", "subheader")
-                                            .attr("id", "scene3_title")
-                                            .text(`Most Popular ${variety}s in ${country} by ${chosen_var}`);
+                                          function make_last_chart(chosen_var) {
+                                            d3.select("#scene3").remove();
+                                            d3.select("#scene3_title").remove();
+                                            mouseleave();
+                                            mouseleave2();
 
-                                          var svg3 = d3.select("body").append("svg")
-                                              .attr("width", width)
-                                              .attr("height", height + 350)
-                                              .attr("id", "scene3")
+                                            let not_chosen_var = get_other_var(chosen_var);
 
-                                          var g3 = svg3.append("g")
-                                            .attr("transform", `translate(${margin.left}, ${margin.top})`);
+                                            var header3 = d3.select("body").append("h2")
+                                              .attr("class", "subheader")
+                                              .attr("id", "scene3_title")
+                                              .html(`Most Popular ${variety}s in ${country} by ${capitalize(chosen_var)}<br>`);
 
-                                          let further_filtered = filtered_data.filter(d => d.variety == variety).filter(d => d[chosen_var] > 0);
-                                          let sorted_arr3 = further_filtered.sort((a, b) => d3.descending(parseFloat(a[chosen_var]), parseFloat(b[chosen_var]))).slice(0,20);
+                                            var svg3 = d3.select("body").append("svg")
+                                                .attr("width", width)
+                                                .attr("height", height + 350)
+                                                .attr("id", "scene3")
 
-                                          var x3 = d3.scaleBand()
-                                            .domain(sorted_arr3.map(d => d.title))
-                                            .range([0, width2])
-                                            .padding(0.15);
+                                            var g3 = svg3.append("g")
+                                              .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
-                                          var y3 = d3.scaleLinear()
-                                            .domain([0, d3.max(sorted_arr3, d => parseFloat(d[chosen_var]))])
-                                            .range([height2, 0]);
+                                            var btn = d3.select("#scene3_title").append("button")
+                                              .html(`See by ${capitalize(not_chosen_var)}`)
+                                              .on("click", function() {
+                                                make_last_chart(not_chosen_var);
+                                              });
 
-                                          var color3 = d3.scaleSequential()
-                                            .domain([0, d3.max(sorted_arr3, d => parseFloat(d[chosen_var]))])
-                                            .interpolator(d3.interpolatePurples);
+                                            let further_filtered = filtered_data.filter(d => d.variety == variety).filter(d => d[chosen_var] > 0);
+                                            let sorted_arr3 = further_filtered.sort((a, b) => d3.descending(parseFloat(a[chosen_var]), parseFloat(b[chosen_var]))).slice(0,20);
 
-                                          let xAxis3 = d3.axisBottom(x3);
-                                          let yAxis3 = d3.axisLeft(y3);
+                                            var x3 = d3.scaleBand()
+                                              .domain(sorted_arr3.map(d => d.title))
+                                              .range([0, width2])
+                                              .padding(0.15);
 
-                                          let mouseover3 = function(d) {
-                                                  let row_data = d.target.__data__;
-                                                  let noun;
-                                                  if (chosen_var == "price") {
-                                                          noun = `$${row_data.price.toLocaleString('en-US')}`;
-                                                  } else if (chosen_var == "points") {
-                                                          noun = `${parseInt(row_data.points)} points`;
-                                                  }
+                                            var y3 = d3.scaleLinear()
+                                              .domain([0, d3.max(sorted_arr3, d => parseFloat(d[chosen_var]))])
+                                              .range([height2, 0]);
 
-                                                  d3.select("#tooltip3")
-                                                    .style("top", d.pageY+"px")
-                                                    .style("left", d.pageX+"px")
-                                                    .html("<p><b>" + row_data.title + "</b><br>" + noun + "</p>")
-                                                    .style("visibility", "visible");
+                                            var color3 = d3.scaleSequential()
+                                              .domain([0, d3.max(sorted_arr3, d => parseFloat(d[chosen_var]))])
+                                              .interpolator(d3.interpolatePurples);
+
+                                            let xAxis3 = d3.axisBottom(x3);
+                                            let yAxis3 = d3.axisLeft(y3);
+
+                                            let mouseover3 = function(d) {
+                                                    let row_data = d.target.__data__;
+                                                    let noun;
+                                                    if (chosen_var == "price") {
+                                                            noun = `$${row_data.price.toLocaleString('en-US')}`;
+                                                    } else if (chosen_var == "points") {
+                                                            noun = `${parseInt(row_data.points)} points`;
+                                                    }
+
+                                                    d3.select("#tooltip3")
+                                                      .style("top", d.pageY+"px")
+                                                      .style("left", d.pageX+"px")
+                                                      .html("<p><b>" + row_data.title + "</b><br>" + noun + "</p>")
+                                                      .style("visibility", "visible");
+                                            }
+
+                                            let mousemove3 = function(d) {
+                                                    d3.select("#tooltip3")
+                                                      .style("top", d.pageY+"px")
+                                                      .style("left", d.pageX+"px");
+                                            }
+
+                                            let mouseleave3 = function(d) {
+                                                    d3.select("#tooltip3")
+                                                      .style("visibility", "hidden");
+                                            }
+
+                                            g3.append("g").selectAll("rect")
+                                              .data(sorted_arr3)
+                                              .join("rect")
+                                                .attr("x", d => x3(d.title))
+                                                .attr("width", x3.bandwidth())
+                                                .attr("y", d => y3(parseFloat(d[chosen_var])))
+                                                .attr("height", d => height2 - y3(parseFloat(d[chosen_var])))
+                                                .attr("fill", d => color3(parseFloat(d[chosen_var])))
+                                                .on("mouseover", mouseover3)
+                                                .on("mousemove", mousemove3)
+                                                .on("mouseleave", mouseleave3);
+
+                                            g3.append("g")
+                                              .attr("transform", `translate(0, ${height2})`)
+                                              .call(xAxis3)
+                                              .selectAll("text")
+                                              .style("text-anchor", "end")
+                                              .attr("dx", "-.8em")
+                                              .attr("dy", ".15em")
+                                              .attr("transform", "rotate(-80)");
+
+                                            g3.append("g")
+                                              .call(yAxis3);
+
+                                            g3.append("rect")
+                                                  .attr("x", 375)
+                                                  .attr("y", 5)
+                                                  .attr("height", 40)
+                                                  .attr("width", 350)
+                                                  .attr("fill", light_red)
+                                                  .attr("stroke", dark_red);
+
+                                            let adjective;
+                                            if (chosen_var == "price") {adjective = "pricey"};
+                                            if (chosen_var == "points") {adjective = "highly-rated"};
+
+                                            g3.append("text")
+                                                  .attr("class", "textbox")
+                                                  .attr("transform", `translate(${margin.left + 500}, ${margin.top + 10})`)
+                                                  .attr("text-anchor", "middle")
+                                                  .text(`There are some ${adjective} wines out there!`);
+
+                                            g3.append("text")
+                                                  .attr("class", "textbox")
+                                                  .attr("transform", `translate(${margin.left + 500}, ${margin.top + 25})`)
+                                                  .attr("text-anchor", "middle")
+                                                  .text("Feel free to continue exploring other wines & regions. Have a good day!");
                                           }
 
-                                          let mousemove3 = function(d) {
-                                                  d3.select("#tooltip3")
-                                                    .style("top", d.pageY+"px")
-                                                    .style("left", d.pageX+"px");
-                                          }
-
-                                          let mouseleave3 = function(d) {
-                                                  d3.select("#tooltip3")
-                                                    .style("visibility", "hidden");
-                                          }
-
-                                          g3.append("g").selectAll("rect")
-                                            .data(sorted_arr3)
-                                            .join("rect")
-                                              .attr("x", d => x3(d.title))
-                                              .attr("width", x3.bandwidth())
-                                              .attr("y", d => y3(parseFloat(d[chosen_var])))
-                                              .attr("height", d => height2 - y3(parseFloat(d[chosen_var])))
-                                              .attr("fill", d => color3(parseFloat(d[chosen_var])))
-                                              .on("mouseover", mouseover3)
-                                              .on("mousemove", mousemove3)
-                                              .on("mouseleave", mouseleave3);
-
-                                          g3.append("g")
-                                            .attr("transform", `translate(0, ${height2})`)
-                                            .call(xAxis3)
-                                            .selectAll("text")
-                                            .style("text-anchor", "end")
-                                            .attr("dx", "-.8em")
-                                            .attr("dy", ".15em")
-                                            .attr("transform", "rotate(-80)");
-
-                                          g3.append("g")
-                                            .call(yAxis3);
-
-                                          g3.append("rect")
-                                                .attr("x", 375)
-                                                .attr("y", 5)
-                                                .attr("height", 40)
-                                                .attr("width", 350)
-                                                .attr("fill", light_red)
-                                                .attr("stroke", dark_red);
-
-                                          let adjective;
-                                          if (chosen_var == "price") {adjective = "pricey"};
-                                          if (chosen_var == "points") {adjective = "highly-rated"};
-
-                                          g3.append("text")
-                                                .attr("class", "textbox")
-                                                .attr("transform", `translate(${margin.left + 500}, ${margin.top + 10})`)
-                                                .attr("text-anchor", "middle")
-                                                .text(`There are some ${adjective} wines out there!`);
-
-                                          g3.append("text")
-                                                .attr("class", "textbox")
-                                                .attr("transform", `translate(${margin.left + 500}, ${margin.top + 25})`)
-                                                .attr("text-anchor", "middle")
-                                                .text("Feel free to continue exploring other wines & regions. Have a good day!");
+                                          make_last_chart(v);
                                   }
 
                                   var x = d3.scaleBand()
@@ -339,7 +371,9 @@
                                       .attr("y", d => y(d.value))
                                       .attr("height", d => height2 - y(d.value))
                                       .attr("fill", d => color2(d.value))
-                                      .on("click", last_chart)
+                                      .on("click", function(d) {
+                                            last_chart(d, chosen_var);
+                                      })
                                       .on("mouseover", mouseover2)
                                       .on("mousemove", mousemove2)
                                       .on("mouseleave", mouseleave2);
