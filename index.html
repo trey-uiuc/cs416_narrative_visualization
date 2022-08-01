@@ -56,7 +56,10 @@
   <body>
     <h1>Wines Reviewed Around the World</h1>
     <p class="subheader">The following graphic utilizes a heatmap to illustrate the number of wines that were reviewed in each country around the world.</p>
-    <p style="font-size: 10pt;">Click on any country to see more details about wines that grow in the region! The data for this project was borrowed from a publicly available dataset on <a href="https://www.kaggle.com/datasets/zynicide/wine-reviews">Kaggle</a>.</p>
+    <ul style="font-size: 10pt;">
+      <li>Click on any country to see more details about wines that grow in the region!</li>
+      <li>The data for this project was borrowed from a publicly available dataset on <a href="https://www.kaggle.com/datasets/zynicide/wine-reviews">Kaggle</a>.</li>
+    </ul>
     <div id="tooltip1"><p>I'm a tooltip!</p></div>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://unpkg.com/topojson-client@3"></script>
@@ -108,14 +111,7 @@
                           let filtered_data = grouped_arr.filter((d) => d.value > 10);
                           let filtered_map = new Map(
                             filtered_data.map(object => {
-                              let country_name = object.key;
-                              if (country_name === "US") {
-                                      country_name = "United States of America";
-                              }
-                              if (country_name === "England") {
-                                      country_name = "United Kingdom";
-                              }
-                              return [country_name, object.value];
+                              return [object.key, object.value];
                             }),
                           );
 
