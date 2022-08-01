@@ -6,8 +6,25 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <style>
 
+      body {
+        font-family: Arial;
+        font-size: 8pt;
+      }
+
+      h1 {
+        font-size: 24pt;
+      }
+
+      h2, .subheader {
+        font-size: 12pt;
+      }
+
       svg {
         border: 2px solid black;
+      }
+
+      #scene1 {
+        background-color: #bde0ff;
       }
 
       path {
@@ -16,7 +33,7 @@
       }
 
       .country {
-        fill: black;
+        fill: white;
       }
 
       #tooltip1 {
@@ -26,12 +43,11 @@
         width: auto;
         height: auto;
         text-align: center;
-        padding: 20px;
-        margin: 10px;
-        font: 12px sans-serif;
+        padding: 10px;
+        margin: 5px;
         background: lightsteelblue;
         border: 1px;
-        border-radius: 2px;
+        border-radius: 5px;
       }
 
     </style>
@@ -39,7 +55,7 @@
   </head>
   <body>
     <h1>Wines Reviewed Around the World</h1>
-    <p>The following graphic illustrates a dataset describing reviews of wines around the world.</p>
+    <p class="subheader">The following graphic illustrates interesting observations regarding a dataset of reviews of wines around the world.</p>
     <div id="tooltip1"><p>I'm a tooltip!</p></div>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://unpkg.com/topojson-client@3"></script>
@@ -48,31 +64,25 @@
       function get_data() {
         let result = d3.csv("./data/wine.csv")
           .then(function(data){
-              let grouped_arr = Array.from(d3.rollup(data, v => v.length, d => d.country), ([key, value]) => ({key, value}));
-              let grouped_map = d3.rollup(data, v => v.length, d => d.country);
-              let filtered_data = grouped_arr.filter((d) => d.value > 10);
-              let filtered_map = new Map(
-                      filtered_data.map(object => {
-                              let country_name = object.key;
-                              if (country_name === "US") {
-                                      country_name = "United States of America";
-                              }
-                              if (country_name === "England") {
-                                      country_name = "United Kingdom";
-                              }
-                              return [country_name, object.value];
-                            }),
-                    );
-              return filtered_map;
-          })
-          .catch(function(error){
-                  throw error;
+              data.forEach(d => {
+                      if (d.country == "US") {
+                              d.country = "United States of America";
+                      } else if (d.country == "England") {
+                              d.country = "United Kingdon";
+                      }
+              })
+              return data;
           });
         return result;
       }
 
       var width = 1000,
          height = 500;
+
+      var margin = {top: 10, right: 10, bottom: 125, left: 50}
+
+      let light_red = d3.rgb(242, 218, 218);
+      let dark_red = d3.rgb(115, 9, 9);
 
       var projection = d3.geoMercator()
           .scale(150);
@@ -92,17 +102,32 @@
               .then(function(topology) {
                   let data = get_data()
                         .then(function(wine_data) {
+                          let grouped_map = d3.rollup(wine_data, v => v.length, d => d.country);
+                          let grouped_arr = Array.from(grouped_map, ([key, value]) => ({key, value}));
+                          let filtered_data = grouped_arr.filter((d) => d.value > 10);
+                          let filtered_map = new Map(
+                            filtered_data.map(object => {
+                              let country_name = object.key;
+                              if (country_name === "US") {
+                                      country_name = "United States of America";
+                              }
+                              if (country_name === "England") {
+                                      country_name = "United Kingdom";
+                              }
+                              return [country_name, object.value];
+                            }),
+                          );
 
                           var mouseover = function(d) {
                                   let row_data = d.target.__data__.properties;
-                                  let wine_row = wine_data.get(row_data.name);
+                                  let wine_row = filtered_map.get(row_data.name);
                                   let wines_reviewed = 0;
                                   if (wine_row > 0) wines_reviewed = wine_row;
 
                                   d3.select("#tooltip1")
                                     .style("top", d.pageY+"px")
                                     .style("left", d.pageX+"px")
-                                    .html("<p>" + row_data.name + "<br>" + wines_reviewed.toLocaleString('en-US') + " wines reviewed" + "</p>")
+                                    .html("<p><b>" + row_data.name + "<br>" + wines_reviewed.toLocaleString('en-US') + "</b> wines reviewed" + "</p>")
                                     .style("visibility", "visible")
                                 }
 
@@ -117,9 +142,107 @@
                                     .style("visibility", "hidden");
                                 }
 
+                          var clicker = function(d) {
+                                  d3.select("#scene2").remove();
+                                  d3.select("#scene2_title").remove();
+                                  mouseleave();
+
+                                  let country = d.target.__data__.properties.name;
+                                  let width2 = width - margin.left - margin.right;
+                                  let height2 = height - margin.top - margin.bottom;
+
+                                  var header = d3.select("body").append("h2")
+                                    .attr("class", "subheader")
+                                    .attr("id", "scene2_title")
+                                    .text(`Most Popular Wines in ${country}`);
+
+                                  var svg2 = d3.select("body").append("svg")
+                                      .attr("width", width)
+                                      .attr("height", height)
+                                      .attr("id", "scene2")
+
+                                  var g2 = svg2.append("g")
+                                    .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+                                  let filtered_data = wine_data.filter((d) => d.country == country);
+                                  let grouped_map = d3.rollup(filtered_data, v=> v.length, d => d.variety);
+                                  let grouped_arr = Array.from(grouped_map, ([key, value]) => ({key, value}));
+                                  let sorted_arr = grouped_arr.sort((a, b) => d3.descending(a.value, b.value))
+                                  console.log("sorted_arr");
+                                  console.log(sorted_arr);
+                                  let sliced_arr = sorted_arr.slice(0,20);
+
+                                  var x = d3.scaleBand()
+                                    .domain(sliced_arr.map(d => d.key))
+                                    .range([0, width2])
+                                    .padding(0.15);
+
+                                  var y = d3.scaleLinear()
+                                    .domain([0, d3.max(sliced_arr, d => d.value)])
+                                    .range([height2, 0]);
+
+                                  var color2 = d3.scaleSequential()
+                                    .domain([0, d3.max(sliced_arr, d => d.value)])
+                                    .interpolator(d3.interpolateReds);
+
+                                  let xAxis = d3.axisBottom(x);
+                                  let yAxis = d3.axisLeft(y);
+
+                                  g2.append("g").selectAll("rect")
+                                    .data(sliced_arr)
+                                    .join("rect")
+                                      .attr("x", d => x(d.key))
+                                      .attr("width", x.bandwidth())
+                                      .attr("y", d => y(d.value))
+                                      .attr("height", d => height2 - y(d.value))
+                                      .attr("fill", d => color2(d.value));
+
+                                  g2.append("g")
+                                    .attr("transform", `translate(0, ${height2})`)
+                                    .call(xAxis)
+                                    .selectAll("text")
+                                    .style("text-anchor", "end")
+                                    .attr("dx", "-.8em")
+                                    .attr("dy", ".15em")
+                                    .attr("transform", "rotate(-65)");
+
+                                  g2.append("g")
+                                    .call(yAxis);
+                          }
+
                           const color = d3.scaleLinear()
-                                  .domain([d3.min(wine_data.values()), d3.max(wine_data.values())])
+                                  .domain([d3.min(filtered_map.values()), d3.max(filtered_map.values())])
                                   .range([d3.rgb(242, 218, 218), d3.rgb(115, 9, 9)]);
+
+                          g.append("rect")
+                                .attr("class", "key")
+                                .attr("x", 20)
+                                .attr("y", 465)
+                                .attr("height", 8)
+                                .attr("width", 8)
+                                .attr("fill", light_red);
+
+                          g.append("text")
+                                .attr("class", "key")
+                                .attr("x", 35)
+                                .attr("y", 472.5)
+                                .attr("text-anchor", "start")
+                                .text("0-10,000 wines reviewed")
+
+                          g.append("rect")
+                                .attr("class", "key")
+                                .attr("x", 20)
+                                .attr("y", 480)
+                                .attr("height", 8)
+                                .attr("width", 8)
+                                .attr("fill", dark_red);
+
+                          g.append("text")
+                                .attr("class", "key")
+                                .attr("x", 35)
+                                .attr("y", 487.5)
+                                .attr("text-anchor", "start")
+                                .text("10,000+ wines reviewed")
 
                           g.selectAll("path")
                              .data(topojson.feature(topology, topology.objects.countries).features)
@@ -127,13 +250,14 @@
                              .attr("class", "country")
                              .attr("text", d => d.properties.name)
                              .style("fill", d => {
-                                     const wine_row = wine_data.get(d.properties.name);
+                                     const wine_row = filtered_map.get(d.properties.name);
                                      if (wine_row > 0) return color(wine_row);
                                    })
                              .attr("d", path)
                              .on("mouseover", mouseover)
                              .on("mousemove", mousemove)
-                             .on("mouseleave", mouseleave);
+                             .on("mouseleave", mouseleave)
+                             .on("click", clicker);
                         });
                   });
 
