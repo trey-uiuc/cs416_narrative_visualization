@@ -36,7 +36,7 @@
         fill: white;
       }
 
-      #tooltip1 {
+      .tooltip {
         position: absolute;
         visibility: hidden;
         z-index: 100;
@@ -45,9 +45,9 @@
         text-align: center;
         padding: 10px;
         margin: 5px;
-        background: lightsteelblue;
-        border: 1px;
+        border: 1px solid rgb(115, 9, 9);
         border-radius: 5px;
+        background: rgb(242, 218, 218);
       }
 
     </style>
@@ -60,7 +60,9 @@
       <li>Click on any country to see more details about wines that grow in the region!</li>
       <li>The data for this project was borrowed from a publicly available dataset on <a href="https://www.kaggle.com/datasets/zynicide/wine-reviews">Kaggle</a>.</li>
     </ul>
-    <div id="tooltip1"><p>I'm a tooltip!</p></div>
+    <div id="tooltip1" class="tooltip"><p>I'm a tooltip!</p></div>
+    <div id="tooltip2" class="tooltip"><p>I'm another tooltip!</p></div>
+    <div id="tooltip3" class="tooltip"><p>Am I a tooltip?</p></div>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://unpkg.com/topojson-client@3"></script>
     <script>
@@ -175,9 +177,32 @@
                                   let sorted_arr = grouped_arr.sort((a, b) => d3.descending(a.value, b.value));
                                   let sliced_arr = sorted_arr.slice(0,20);
 
+                                  let mouseover2 = function(d) {
+                                          let row_data = d.target.__data__;
+
+                                          d3.select("#tooltip2")
+                                            .style("top", d.pageY+"px")
+                                            .style("left", d.pageX+"px")
+                                            .html("<p><b>" + row_data.key + "<br>" + row_data.value.toLocaleString('en-US') + "</b> wines of this variety reviewed" + "</p>")
+                                            .style("visibility", "visible");
+                                  }
+
+                                  let mousemove2 = function(d) {
+                                          d3.select("#tooltip2")
+                                            .style("top", d.pageY+"px")
+                                            .style("left", d.pageX+"px");
+                                        }
+
+                                  let mouseleave2 = function(d) {
+                                          d3.select("#tooltip2")
+                                            .style("visibility", "hidden");
+                                        }
+
                                   let last_chart = function(x) {
                                           d3.select("#scene3").remove();
                                           d3.select("#scene3_title").remove();
+                                          mouseleave();
+                                          mouseleave2();
 
                                           let variety = x.target.__data__.key;
                                           let chosen_var = "price";
@@ -214,6 +239,33 @@
                                           let xAxis3 = d3.axisBottom(x3);
                                           let yAxis3 = d3.axisLeft(y3);
 
+                                          let mouseover3 = function(d) {
+                                                  let row_data = d.target.__data__;
+                                                  let noun;
+                                                  if (chosen_var == "price") {
+                                                          noun = `$${row_data.price.toLocaleString('en-US')}`;
+                                                  } else if (chosen_var == "points") {
+                                                          noun = `${parseInt(row_data.points)} points`;
+                                                  }
+
+                                                  d3.select("#tooltip3")
+                                                    .style("top", d.pageY+"px")
+                                                    .style("left", d.pageX+"px")
+                                                    .html("<p><b>" + row_data.title + "</b><br>" + noun + "</p>")
+                                                    .style("visibility", "visible");
+                                          }
+
+                                          let mousemove3 = function(d) {
+                                                  d3.select("#tooltip3")
+                                                    .style("top", d.pageY+"px")
+                                                    .style("left", d.pageX+"px");
+                                          }
+
+                                          let mouseleave3 = function(d) {
+                                                  d3.select("#tooltip3")
+                                                    .style("visibility", "hidden");
+                                          }
+
                                           g3.append("g").selectAll("rect")
                                             .data(sorted_arr3)
                                             .join("rect")
@@ -221,7 +273,10 @@
                                               .attr("width", x3.bandwidth())
                                               .attr("y", d => y3(parseFloat(d[chosen_var])))
                                               .attr("height", d => height2 - y3(parseFloat(d[chosen_var])))
-                                              .attr("fill", d => color3(parseFloat(d[chosen_var])));
+                                              .attr("fill", d => color3(parseFloat(d[chosen_var])))
+                                              .on("mouseover", mouseover3)
+                                              .on("mousemove", mousemove3)
+                                              .on("mouseleave", mouseleave3);
 
                                           g3.append("g")
                                             .attr("transform", `translate(0, ${height2})`)
@@ -235,6 +290,29 @@
                                           g3.append("g")
                                             .call(yAxis3);
 
+                                          g3.append("rect")
+                                                .attr("x", 375)
+                                                .attr("y", 5)
+                                                .attr("height", 40)
+                                                .attr("width", 350)
+                                                .attr("fill", light_red)
+                                                .attr("stroke", dark_red);
+
+                                          let adjective;
+                                          if (chosen_var == "price") {adjective = "pricey"};
+                                          if (chosen_var == "points") {adjective = "highly-rated"};
+
+                                          g3.append("text")
+                                                .attr("class", "textbox")
+                                                .attr("transform", `translate(${margin.left + 500}, ${margin.top + 10})`)
+                                                .attr("text-anchor", "middle")
+                                                .text(`There are some ${adjective} wines out there!`);
+
+                                          g3.append("text")
+                                                .attr("class", "textbox")
+                                                .attr("transform", `translate(${margin.left + 500}, ${margin.top + 25})`)
+                                                .attr("text-anchor", "middle")
+                                                .text("Feel free to continue exploring other wines & regions. Have a good day!");
                                   }
 
                                   var x = d3.scaleBand()
@@ -261,7 +339,10 @@
                                       .attr("y", d => y(d.value))
                                       .attr("height", d => height2 - y(d.value))
                                       .attr("fill", d => color2(d.value))
-                                      .on("click", last_chart);
+                                      .on("click", last_chart)
+                                      .on("mouseover", mouseover2)
+                                      .on("mousemove", mousemove2)
+                                      .on("mouseleave", mouseleave2);
 
                                   g2.append("g")
                                     .attr("transform", `translate(0, ${height2})`)
