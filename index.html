@@ -2,13 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Page Title</title>
+    <title>Worldly Wines</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <style>
 
       svg {
         border: 2px solid black;
-        <!-- background: lightblue; -->
       }
 
       path {
@@ -20,12 +19,28 @@
         fill: black;
       }
 
+      #tooltip1 {
+        position: absolute;
+        visibility: hidden;
+        z-index: 100;
+        width: auto;
+        height: auto;
+        text-align: center;
+        padding: 20px;
+        margin: 10px;
+        font: 12px sans-serif;
+        background: lightsteelblue;
+        border: 1px;
+        border-radius: 2px;
+      }
+
     </style>
 
   </head>
   <body>
-    <h1>This is a Heading</h1>
-    <p>This is a paragraph.</p>
+    <h1>Wines Reviewed Around the World</h1>
+    <p>The following graphic illustrates a dataset describing reviews of wines around the world.</p>
+    <div id="tooltip1"><p>I'm a tooltip!</p></div>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://unpkg.com/topojson-client@3"></script>
     <script>
@@ -56,40 +71,69 @@
         return result;
       }
 
-      <!-- var color = d3.scaleThreshold() -->
-            <!-- .domain([1,10]) -->
-            <!-- .rangeRound([600, 860]) -->
-
-      var width = 960,
+      var width = 1000,
          height = 500;
 
       var projection = d3.geoMercator()
-          .scale(150)
+          .scale(150);
 
       var svg = d3.select("body").append("svg")
           .attr("width", width)
-          .attr("height", height);
+          .attr("height", height)
+          .attr("id", "scene1")
 
       var path = d3.geoPath()
           .projection(projection);
 
-      var g = svg.append("g")
+      var g = svg.append("g");
 
       // load and display the World
       d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
               .then(function(topology) {
                   let data = get_data()
                         .then(function(wine_data) {
-                          console.log(wine_data);
+
+                          var mouseover = function(d) {
+                                  let row_data = d.target.__data__.properties;
+                                  let wine_row = wine_data.get(row_data.name);
+                                  let wines_reviewed = 0;
+                                  if (wine_row > 0) wines_reviewed = wine_row;
+
+                                  d3.select("#tooltip1")
+                                    .style("top", d.pageY+"px")
+                                    .style("left", d.pageX+"px")
+                                    .html("<p>" + row_data.name + "<br>" + wines_reviewed.toLocaleString('en-US') + " wines reviewed" + "</p>")
+                                    .style("visibility", "visible")
+                                }
+
+                          var mousemove = function(d) {
+                                  d3.select("#tooltip1")
+                                    .style("top", d.pageY+"px")
+                                    .style("left", d.pageX+"px");
+                                }
+
+                          var mouseleave = function(d) {
+                                  d3.select("#tooltip1")
+                                    .style("visibility", "hidden");
+                                }
+
+                          const color = d3.scaleLinear()
+                                  .domain([d3.min(wine_data.values()), d3.max(wine_data.values())])
+                                  .range([d3.rgb(242, 218, 218), d3.rgb(115, 9, 9)]);
+
                           g.selectAll("path")
                              .data(topojson.feature(topology, topology.objects.countries).features)
                              .enter().append("path")
                              .attr("class", "country")
                              .attr("text", d => d.properties.name)
                              .style("fill", d => {
-                                     if (wine_data.get(d.properties.name) > 0) return "pink";
+                                     const wine_row = wine_data.get(d.properties.name);
+                                     if (wine_row > 0) return color(wine_row);
                                    })
-                             .attr("d", path);
+                             .attr("d", path)
+                             .on("mouseover", mouseover)
+                             .on("mousemove", mousemove)
+                             .on("mouseleave", mouseleave);
                         });
                   });
 
