@@ -244,6 +244,7 @@
                                               .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
                                             var btn = d3.select("#scene3_title").append("button")
+                                              .attr("id", "cool_button")
                                               .html(`See by ${capitalize(not_chosen_var)}`)
                                               .on("click", function() {
                                                 make_last_chart(not_chosen_var);
