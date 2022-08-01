@@ -29,9 +29,6 @@
     <script src="https://unpkg.com/topojson-client@3"></script>
     <script>
 
-      <!-- const color = d3.scaleSequential() -->
-            <!-- .domain([d3.min()]) -->
-
       function get_data() {
         let result = d3.csv("./data/wine.csv")
           .then(function(data){
@@ -51,15 +48,11 @@
         return result;
       }
 
-      <!-- console.log(get_data()); -->
-
       var width = 960,
          height = 500;
 
       var projection = d3.geoMercator()
-          <!-- .center([0, 100 ]) -->
           .scale(150)
-          <!-- .rotate([-180,0]); -->
 
       var svg = d3.select("body").append("svg")
           .attr("width", width)
@@ -83,14 +76,6 @@
                              .attr("d", path);
                         });
                   });
-
-
-            <!-- global_colorScale = d3 -->
-              <!-- .scale.ordinal() -->
-              <!-- .domain(data.map(function(d) { return d.id; })) -->
-              <!-- .range(data.map(function(d) { return d.color; })); -->
-              <!-- .style("fill", function(d) { return global_colorScale(d.id);  }) -->
-
 
     </script>
 
