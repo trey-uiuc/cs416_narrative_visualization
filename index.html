@@ -8,7 +8,7 @@
 
       svg {
         border: 2px solid black;
-        background: lightblue;
+        <!-- background: lightblue; -->
       }
 
       path {
@@ -38,7 +38,14 @@
               let filtered_data = grouped_arr.filter((d) => d.value > 10);
               let filtered_map = new Map(
                       filtered_data.map(object => {
-                              return [object.key, object.value];
+                              let country_name = object.key;
+                              if (country_name === "US") {
+                                      country_name = "United States of America";
+                              }
+                              if (country_name === "England") {
+                                      country_name = "United Kingdom";
+                              }
+                              return [country_name, object.value];
                             }),
                     );
               return filtered_map;
@@ -79,6 +86,9 @@
                              .enter().append("path")
                              .attr("class", "country")
                              .attr("text", d => d.properties.name)
+                             .style("fill", d => {
+                                     if (wine_data.get(d.properties.name) > 0) return "pink";
+                                   })
                              .attr("d", path);
                         });
                   });
