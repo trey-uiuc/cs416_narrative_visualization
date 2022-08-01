@@ -80,6 +80,11 @@
         return result;
       }
 
+      let groupby = function(dataset, col) {
+              let grouped = d3.rollup(dataset, v => v.length, d => d[col]);
+              return Array.from(grouped, ([key, value]) => ({key, value}));
+      }
+
       var width = 1000,
          height = 500;
 
@@ -106,8 +111,7 @@
               .then(function(topology) {
                   let data = get_data()
                         .then(function(wine_data) {
-                          let grouped_map = d3.rollup(wine_data, v => v.length, d => d.country);
-                          let grouped_arr = Array.from(grouped_map, ([key, value]) => ({key, value}));
+                          let grouped_arr = groupby(wine_data, "country");
                           let filtered_data = grouped_arr.filter((d) => d.value > 10);
                           let filtered_map = new Map(
                             filtered_data.map(object => {
@@ -142,11 +146,11 @@
                                 }
 
                           var clicker = function(d) {
-                                  <!-- let last_chart = function(x) { -->
-                                  <!-- } -->
 
                                   d3.select("#scene2").remove();
                                   d3.select("#scene2_title").remove();
+                                  d3.select("#scene3").remove();
+                                  d3.select("#scene3_title").remove();
                                   mouseleave();
 
                                   let country = d.target.__data__.properties.name;
@@ -156,7 +160,7 @@
                                   var header = d3.select("body").append("h2")
                                     .attr("class", "subheader")
                                     .attr("id", "scene2_title")
-                                    .text(`Most Popular Wines in ${country}`);
+                                    .text(`Most Popular Grapes in ${country}`);
 
                                   var svg2 = d3.select("body").append("svg")
                                       .attr("width", width)
@@ -167,10 +171,71 @@
                                     .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
                                   let filtered_data = wine_data.filter((d) => d.country == country);
-                                  let grouped_map = d3.rollup(filtered_data, v=> v.length, d => d.variety);
-                                  let grouped_arr = Array.from(grouped_map, ([key, value]) => ({key, value}));
-                                  let sorted_arr = grouped_arr.sort((a, b) => d3.descending(a.value, b.value))
+                                  let grouped_arr = groupby(filtered_data, "variety");
+                                  let sorted_arr = grouped_arr.sort((a, b) => d3.descending(a.value, b.value));
                                   let sliced_arr = sorted_arr.slice(0,20);
+
+                                  let last_chart = function(x) {
+                                          d3.select("#scene3").remove();
+                                          d3.select("#scene3_title").remove();
+
+                                          let variety = x.target.__data__.key;
+                                          let chosen_var = "price";
+
+                                          var header3 = d3.select("body").append("h2")
+                                            .attr("class", "subheader")
+                                            .attr("id", "scene3_title")
+                                            .text(`Most Popular ${variety}s in ${country} by ${chosen_var}`);
+
+                                          var svg3 = d3.select("body").append("svg")
+                                              .attr("width", width)
+                                              .attr("height", height + 350)
+                                              .attr("id", "scene3")
+
+                                          var g3 = svg3.append("g")
+                                            .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+                                          let further_filtered = filtered_data.filter(d => d.variety == variety).filter(d => d[chosen_var] > 0);
+                                          let sorted_arr3 = further_filtered.sort((a, b) => d3.descending(parseFloat(a[chosen_var]), parseFloat(b[chosen_var]))).slice(0,20);
+
+                                          var x3 = d3.scaleBand()
+                                            .domain(sorted_arr3.map(d => d.title))
+                                            .range([0, width2])
+                                            .padding(0.15);
+
+                                          var y3 = d3.scaleLinear()
+                                            .domain([0, d3.max(sorted_arr3, d => parseFloat(d[chosen_var]))])
+                                            .range([height2, 0]);
+
+                                          var color3 = d3.scaleSequential()
+                                            .domain([0, d3.max(sorted_arr3, d => parseFloat(d[chosen_var]))])
+                                            .interpolator(d3.interpolatePurples);
+
+                                          let xAxis3 = d3.axisBottom(x3);
+                                          let yAxis3 = d3.axisLeft(y3);
+
+                                          g3.append("g").selectAll("rect")
+                                            .data(sorted_arr3)
+                                            .join("rect")
+                                              .attr("x", d => x3(d.title))
+                                              .attr("width", x3.bandwidth())
+                                              .attr("y", d => y3(parseFloat(d[chosen_var])))
+                                              .attr("height", d => height2 - y3(d[chosen_var]))
+                                              .attr("fill", d => color3(parseFloat(d[chosen_var])));
+
+                                          g3.append("g")
+                                            .attr("transform", `translate(0, ${height2})`)
+                                            .call(xAxis3)
+                                            .selectAll("text")
+                                            .style("text-anchor", "end")
+                                            .attr("dx", "-.8em")
+                                            .attr("dy", ".15em")
+                                            .attr("transform", "rotate(-80)");
+
+                                          g3.append("g")
+                                            .call(yAxis3);
+
+                                  }
 
                                   var x = d3.scaleBand()
                                     .domain(sliced_arr.map(d => d.key))
@@ -196,7 +261,7 @@
                                       .attr("y", d => y(d.value))
                                       .attr("height", d => height2 - y(d.value))
                                       .attr("fill", d => color2(d.value))
-                                      <!-- .on("click", last_chart); -->
+                                      .on("click", last_chart);
 
                                   g2.append("g")
                                     .attr("transform", `translate(0, ${height2})`)
