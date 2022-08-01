@@ -220,7 +220,7 @@
                                               .attr("x", d => x3(d.title))
                                               .attr("width", x3.bandwidth())
                                               .attr("y", d => y3(parseFloat(d[chosen_var])))
-                                              .attr("height", d => height2 - y3(d[chosen_var]))
+                                              .attr("height", d => height2 - y3(parseFloat(d[chosen_var])))
                                               .attr("fill", d => color3(parseFloat(d[chosen_var])));
 
                                           g3.append("g")
